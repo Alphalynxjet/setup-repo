@@ -1,0 +1,11 @@
+[Unit]
+Description=LetsEncrypt Certificate Renewal for TAK Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/certbot renew --quiet --deploy-hook "__RENEWAL_SCRIPT__"
+StandardOutput=journal
+StandardError=journal

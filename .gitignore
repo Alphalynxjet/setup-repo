@@ -1,0 +1,10 @@
+jdk/*
+release/*
+tak-pack/*
+
+zulu*
+config.inc.sh
+config.inc.template.sh
+
+scripts/post-install*
+.claude
