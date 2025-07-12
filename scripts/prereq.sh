@@ -5,7 +5,19 @@ export SCRIPT_PATH=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 echo "Select installation type:"
 echo "1. Ubuntu"
 echo "2. Docker"
-read -p "Enter 1 or 2: " choice
+
+# Use AUTO_INSTALL if set, otherwise prompt
+if [ -n "$AUTO_INSTALL" ]; then
+    if [ "$AUTO_INSTALL" = "ubuntu" ]; then
+        choice=1
+        echo "Automated selection: Ubuntu (1)"
+    else
+        choice=2
+        echo "Automated selection: Docker (2)"
+    fi
+else
+    read -p "Enter 1 or 2: " choice
+fi
 
 case "$choice" in
   1)

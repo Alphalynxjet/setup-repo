@@ -3,13 +3,23 @@
 ## Release Name
 #
 HOSTNAME_DEFAULT=${HOSTNAME//\./-}
-prompt "Name your TAK release alias [${HOSTNAME_DEFAULT}] :" TAK_ALIAS
-TAK_ALIAS=${TAK_ALIAS:-${HOSTNAME_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    TAK_ALIAS=${AUTO_DOMAIN//\./-}
+    echo "TAK release alias: ${TAK_ALIAS} (automated)"
+else
+    prompt "Name your TAK release alias [${HOSTNAME_DEFAULT}] :" TAK_ALIAS
+    TAK_ALIAS=${TAK_ALIAS:-${HOSTNAME_DEFAULT}}
+fi
 
 ## TAK URI 
 #
-prompt "What is the URI (FQDN, hostname, or IP) [${IP_ADDRESS}] :" TAK_URI
-TAK_URI=${TAK_URI:-${IP_ADDRESS}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    TAK_URI=${AUTO_DOMAIN}
+    echo "TAK URI: ${TAK_URI} (automated)"
+else
+    prompt "What is the URI (FQDN, hostname, or IP) [${IP_ADDRESS}] :" TAK_URI
+    TAK_URI=${TAK_URI:-${IP_ADDRESS}}
+fi
 
 ## DB Password
 #
@@ -27,58 +37,111 @@ fi
 
 ## CA Info
 #
-msg $info "\n\nCertificate Information (you can accept all the defaults)"
+if [ -z "$AUTO_DOMAIN" ]; then
+    msg $info "\n\nCertificate Information (you can accept all the defaults)"
+fi
 
 ORGANIZATION_DEFAULT="tak-tools"
-prompt "Certificate Organization [${ORGANIZATION_DEFAULT}] :" ORGANIZATION
-ORGANIZATION=${ORGANIZATION:-${ORGANIZATION_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    ORGANIZATION=${ORGANIZATION_DEFAULT}
+    echo "Certificate Organization: ${ORGANIZATION} (automated)"
+else
+    prompt "Certificate Organization [${ORGANIZATION_DEFAULT}] :" ORGANIZATION
+    ORGANIZATION=${ORGANIZATION:-${ORGANIZATION_DEFAULT}}
+fi
 
 ORGANIZATIONAL_UNIT_DEFAULT="tak"
-prompt "Certificate Organizational Unit [${ORGANIZATIONAL_UNIT_DEFAULT}] :" ORGANIZATIONAL_UNIT
-ORGANIZATIONAL_UNIT=${ORGANIZATIONAL_UNIT:-${ORGANIZATIONAL_UNIT_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    ORGANIZATIONAL_UNIT=${ORGANIZATIONAL_UNIT_DEFAULT}
+    echo "Certificate Organizational Unit: ${ORGANIZATIONAL_UNIT} (automated)"
+else
+    prompt "Certificate Organizational Unit [${ORGANIZATIONAL_UNIT_DEFAULT}] :" ORGANIZATIONAL_UNIT
+    ORGANIZATIONAL_UNIT=${ORGANIZATIONAL_UNIT:-${ORGANIZATIONAL_UNIT_DEFAULT}}
+fi
 
 CITY_DEFAULT="XX"
-prompt "Certificate City [${CITY_DEFAULT}] :" CITY
-CITY=$(uppercase "${CITY:-${CITY_DEFAULT}}")
+if [ -n "$AUTO_DOMAIN" ]; then
+    CITY=$(uppercase "${CITY_DEFAULT}")
+    echo "Certificate City: ${CITY} (automated)"
+else
+    prompt "Certificate City [${CITY_DEFAULT}] :" CITY
+    CITY=$(uppercase "${CITY:-${CITY_DEFAULT}}")
+fi
 
 STATE_DEFAULT="XX"
-prompt "Certificate State [${STATE_DEFAULT}] :" STATE
-STATE=$(uppercase "${STATE:-${STATE_DEFAULT}}")
+if [ -n "$AUTO_DOMAIN" ]; then
+    STATE=$(uppercase "${STATE_DEFAULT}")
+    echo "Certificate State: ${STATE} (automated)"
+else
+    prompt "Certificate State [${STATE_DEFAULT}] :" STATE
+    STATE=$(uppercase "${STATE:-${STATE_DEFAULT}}")
+fi
 
 COUNTRY_DEFAULT="US"
-prompt "Certificate Country (two letter abbreviation) [${COUNTRY_DEFAULT}] :" COUNTRY
-COUNTRY=$(uppercase "${COUNTRY:-${COUNTRY_DEFAULT}}")
+if [ -n "$AUTO_DOMAIN" ]; then
+    COUNTRY=$(uppercase "${COUNTRY_DEFAULT}")
+    echo "Certificate Country: ${COUNTRY} (automated)"
+else
+    prompt "Certificate Country (two letter abbreviation) [${COUNTRY_DEFAULT}] :" COUNTRY
+    COUNTRY=$(uppercase "${COUNTRY:-${COUNTRY_DEFAULT}}")
+fi
 
 CA_PASS_DEFAULT="atakatak"
-prompt "Certificate Authority Password [${CA_PASS_DEFAULT}] :" CA_PASS
-CA_PASS=${CA_PASS:-${CA_PASS_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    CA_PASS=${CA_PASS_DEFAULT}
+    echo "Certificate Authority Password: [REDACTED] (automated)"
+else
+    prompt "Certificate Authority Password [${CA_PASS_DEFAULT}] :" CA_PASS
+    CA_PASS=${CA_PASS:-${CA_PASS_DEFAULT}}
+fi
 
 CERT_PASS_DEFAULT="atakatak"
-prompt "Client Certificate Password [${CERT_PASS_DEFAULT}] :" CERT_PASS
-CERT_PASS=${CERT_PASS:-${CERT_PASS_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    CERT_PASS=${CERT_PASS_DEFAULT}
+    echo "Client Certificate Password: [REDACTED] (automated)"
+else
+    prompt "Client Certificate Password [${CERT_PASS_DEFAULT}] :" CERT_PASS
+    CERT_PASS=${CERT_PASS:-${CERT_PASS_DEFAULT}}
+fi
 
 CLIENT_VALID_DAYS_DEFAULT="30"
-prompt "Client Certificate Validity Duration (days) [${CLIENT_VALID_DAYS_DEFAULT}] :" CLIENT_VALID_DAYS
-CLIENT_VALID_DAYS=${CLIENT_VALID_DAYS:-${CLIENT_VALID_DAYS_DEFAULT}}
+if [ -n "$AUTO_DOMAIN" ]; then
+    CLIENT_VALID_DAYS=${CLIENT_VALID_DAYS_DEFAULT}
+    echo "Client Certificate Validity: ${CLIENT_VALID_DAYS} days (automated)"
+else
+    prompt "Client Certificate Validity Duration (days) [${CLIENT_VALID_DAYS_DEFAULT}] :" CLIENT_VALID_DAYS
+    CLIENT_VALID_DAYS=${CLIENT_VALID_DAYS:-${CLIENT_VALID_DAYS_DEFAULT}}
+fi
 
 
 ## LetsEncrypt (optional)
 #
-msg $info "\n\nLetsEncrypt"
+if [ -z "$AUTO_EMAIL" ]; then
+    msg $info "\n\nLetsEncrypt"
+fi
 
-LE_ENABLE=false
-LE_EMAIL=""
-LE_VALIDATOR="none"
+if [ -n "$AUTO_EMAIL" ]; then
+    LE_ENABLE=true
+    LE_EMAIL="$AUTO_EMAIL"
+    LE_VALIDATOR="web"
+    echo "LetsEncrypt enabled: YES (automated)"
+    echo "LetsEncrypt email: ${LE_EMAIL} (automated)"
+    echo "LetsEncrypt validator: ${LE_VALIDATOR} (automated)"
+else
+    LE_ENABLE=false
+    LE_EMAIL=""
+    LE_VALIDATOR="none"
 
-prompt "Enable LetsEncrypt [y/N] :" LE_PROMPT
-if [[ ${LE_PROMPT} =~ ^[Yy]$ ]];then
-	LE_ENABLE=true
+    prompt "Enable LetsEncrypt [y/N] :" LE_PROMPT
+    if [[ ${LE_PROMPT} =~ ^[Yy]$ ]];then
+        LE_ENABLE=true
 
-	prompt "LetsEncrypt Confirmation Email:" LE_EMAIL
+        prompt "LetsEncrypt Confirmation Email:" LE_EMAIL
 
-	prompt "LetsEncrypt Validator (web/dns):" LE_VALIDATOR
-	if [[ "${LE_VALIDATOR}" != "web" && "${LE_VALIDATOR}" != "dns" ]]; then
-		LE_VALIDATOR="dns"
-	fi
+        prompt "LetsEncrypt Validator (web/dns):" LE_VALIDATOR
+        if [[ "${LE_VALIDATOR}" != "web" && "${LE_VALIDATOR}" != "dns" ]]; then
+            LE_VALIDATOR="dns"
+        fi
+    fi
 fi
 

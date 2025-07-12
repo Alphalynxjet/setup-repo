@@ -5,18 +5,28 @@ source ${SCRIPT_PATH}/inc/functions.sh
 
 msg $warning "\n\n------------ Updating UFW Firewall Rules ------------\n\n"
 
-msg $warning "Answering [y]es to the next prompt will restrict access to a VPN network.\n"
-prompt "Is the TAK Server behind a VPN [y/N]? " VPN
-VPN=${VPN:-n}
+if [ -n "$AUTO_DOMAIN" ]; then
+    VPN="n"
+    echo "VPN configuration: NO (automated mode)"
+else
+    msg $warning "Answering [y]es to the next prompt will restrict access to a VPN network.\n"
+    prompt "Is the TAK Server behind a VPN [y/N]? " VPN
+    VPN=${VPN:-n}
+fi
 
 TRAFFIC_SOURCE="0.0.0.0/0"
 if [[ ${VPN} =~ ^[Yy]$ ]];then
     IFS='.' read A B C D <<< ${IP_ADDRESS}
     NET_RANGE=${A}.${B}.${C}.0/24
 
-    echo; echo
-    prompt "VPN Traffic Range [${NET_RANGE}]: " TRAFFIC_SOURCE
-    TRAFFIC_SOURCE=${TRAFFIC_SOURCE:-${NET_RANGE}}
+    if [ -n "$AUTO_DOMAIN" ]; then
+        TRAFFIC_SOURCE=${NET_RANGE}
+        echo "VPN Traffic Range: ${TRAFFIC_SOURCE} (automated)"
+    else
+        echo; echo
+        prompt "VPN Traffic Range [${NET_RANGE}]: " TRAFFIC_SOURCE
+        TRAFFIC_SOURCE=${TRAFFIC_SOURCE:-${NET_RANGE}}
+    fi
 fi
 
 msg $info "Allow 22 [SSH]"

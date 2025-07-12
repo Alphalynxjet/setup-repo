@@ -132,7 +132,13 @@ pause () {
     if [[ ! -z $1 ]]; then
         msg $info "\nThis is a break pause; should be removed: $1\n\n"
     fi
-    read -s -p "Press Enter to resume setup... "
+    
+    # Skip pause in automated mode
+    if [ -n "$AUTO_DOMAIN" ]; then
+        echo "Skipping pause (automated mode)"
+    else
+        read -s -p "Press Enter to resume setup... "
+    fi
     echo
 }
 
