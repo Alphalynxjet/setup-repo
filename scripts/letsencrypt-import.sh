@@ -16,12 +16,21 @@ if [ ! -d "/etc/letsencrypt/live/${TAK_URI}" ]; then
     exit 1
 fi
 
-if [ ! -d "${RELEASE_PATH}/tak/certs" ]; then
-    msg $error "TAK certs directory not found: ${RELEASE_PATH}/tak/certs"
-    exit 1
+# Handle different installation types
+if [ "${INSTALLER}" = "docker" ]; then
+    CERTS_DIR="${ROOT_PATH}/tak-pack/certs"
+    if [ ! -d "${CERTS_DIR}" ]; then
+        mkdir -p "${CERTS_DIR}/files"
+    fi
+else
+    CERTS_DIR="${RELEASE_PATH}/tak/certs"
+    if [ ! -d "${CERTS_DIR}" ]; then
+        msg $error "TAK certs directory not found: ${CERTS_DIR}"
+        exit 1
+    fi
 fi
 
-cd ${RELEASE_PATH}/tak/certs
+cd ${CERTS_DIR}
 
 msg $warn "\nImporting Lets Encrypt requires \`sudo\` access: \n"
 

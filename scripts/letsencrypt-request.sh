@@ -39,5 +39,3 @@ msg $success "LetsEncrypt certificate obtained successfully for ${TAK_URI}"
 msg $info "\nNext steps:"
 msg $info "1. Run: bash ${SCRIPT_PATH}/letsencrypt-import.sh ${1}"
 msg $info "2. Setup auto-renewal: bash ${SCRIPT_PATH}/setup-letsencrypt-cron.sh ${1} setup"
-
-pause
