@@ -36,14 +36,51 @@ fi
 # Stop Docker containers if running
 if command -v docker &> /dev/null; then
     echo "Stopping Docker containers..."
-    docker-compose down 2>/dev/null || true
-    docker stop $(docker ps -q --filter "name=tak") 2>/dev/null || true
+    
+    # Find and stop all TAK-related containers
+    TAK_CONTAINERS=$(docker ps -a --filter "name=tak" --format "{{.Names}}" 2>/dev/null || true)
+    if [ -n "$TAK_CONTAINERS" ]; then
+        echo "Stopping TAK containers: $TAK_CONTAINERS"
+        echo "$TAK_CONTAINERS" | xargs docker stop 2>/dev/null || true
+        echo "$TAK_CONTAINERS" | xargs docker rm -f 2>/dev/null || true
+    fi
+    
+    # Stop containers using docker-compose if compose file exists
+    find . -name "docker-compose.yml" -exec docker-compose -f {} down 2>/dev/null \; || true
+fi
+
+# Remove Docker networks related to TAK
+if command -v docker &> /dev/null; then
+    echo "Removing TAK Docker networks..."
+    
+    # Remove TAK-specific networks
+    TAK_NETWORKS=$(docker network ls --filter "name=tak" --format "{{.Name}}" 2>/dev/null || true)
+    if [ -n "$TAK_NETWORKS" ]; then
+        echo "Removing TAK networks: $TAK_NETWORKS"
+        echo "$TAK_NETWORKS" | xargs docker network rm 2>/dev/null || true
+    fi
+    
+    # Remove networks with 'server-' prefix (common TAK pattern)
+    SERVER_NETWORKS=$(docker network ls --filter "name=server-" --format "{{.Name}}" 2>/dev/null || true)
+    if [ -n "$SERVER_NETWORKS" ]; then
+        echo "Removing server networks: $SERVER_NETWORKS"
+        echo "$SERVER_NETWORKS" | xargs docker network rm 2>/dev/null || true
+    fi
+    
+    # Prune unused networks
+    docker network prune -f 2>/dev/null || true
 fi
 
 # Remove Docker images related to TAK
 if command -v docker &> /dev/null; then
     echo "Removing TAK Docker images..."
-    docker images | grep -i tak | awk '{print $3}' | xargs docker rmi -f 2>/dev/null || true
+    TAK_IMAGES=$(docker images --filter "reference=*tak*" --format "{{.ID}}" 2>/dev/null || true)
+    if [ -n "$TAK_IMAGES" ]; then
+        echo "$TAK_IMAGES" | xargs docker rmi -f 2>/dev/null || true
+    fi
+    
+    # Remove dangling images
+    docker image prune -f 2>/dev/null || true
 fi
 
 # Remove installed TAK packages (Ubuntu/Debian)

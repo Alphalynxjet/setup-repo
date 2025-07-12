@@ -120,13 +120,18 @@ if [ -z "$AUTO_EMAIL" ]; then
     msg $info "\n\nLetsEncrypt"
 fi
 
-if [ -n "$AUTO_EMAIL" ]; then
+if [ -n "$AUTO_EMAIL" ] && [ "$AUTO_SKIP_LETSENCRYPT" != "true" ]; then
     LE_ENABLE=true
     LE_EMAIL="$AUTO_EMAIL"
     LE_VALIDATOR="web"
     echo "LetsEncrypt enabled: YES (automated)"
     echo "LetsEncrypt email: ${LE_EMAIL} (automated)"
     echo "LetsEncrypt validator: ${LE_VALIDATOR} (automated)"
+elif [ -n "$AUTO_EMAIL" ] && [ "$AUTO_SKIP_LETSENCRYPT" = "true" ]; then
+    LE_ENABLE=false
+    LE_EMAIL="$AUTO_EMAIL"
+    LE_VALIDATOR="none"
+    echo "LetsEncrypt disabled: Skipped in automated mode (can be enabled later)"
 else
     LE_ENABLE=false
     LE_EMAIL=""
