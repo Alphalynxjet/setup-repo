@@ -64,6 +64,7 @@ if ! openssl pkcs12 -export \
 fi
 
 if ! keytool -importkeystore \
+    -noprompt \
     -srckeystore files/letsencrypt.p12 \
     -srcstorepass ${CA_PASS} \
     -destkeystore files/letsencrypt.jks \
