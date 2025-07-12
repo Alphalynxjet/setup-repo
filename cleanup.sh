@@ -60,12 +60,16 @@ cleanup_docker() {
         docker rm -f $tak_containers || true
     fi
     
-    # Remove TAK-related images (optional - uncomment if desired)
-    # local tak_images=$(docker images -q "*tak*" 2>/dev/null || true)
-    # if [ -n "$tak_images" ]; then
-    #     log "INFO" "Removing TAK Docker images..."
-    #     docker rmi -f $tak_images || true
-    # fi
+    # Remove TAK-related images
+    local tak_images=$(docker images -q "*tak*" 2>/dev/null || true)
+    if [ -n "$tak_images" ]; then
+        log "INFO" "Removing TAK Docker images..."
+        docker rmi -f $tak_images || true
+    fi
+    
+    # Remove all unused Docker images, containers, and networks
+    log "INFO" "Removing all unused Docker resources..."
+    docker system prune -a -f || true
     
     # Remove TAK-related volumes
     local tak_volumes=$(docker volume ls -q --filter "name=tak" 2>/dev/null || true)
@@ -87,9 +91,8 @@ cleanup_letsencrypt() {
         crontab -l 2>/dev/null | grep -v "letsencrypt\|certbot" | crontab - || true
     fi
     
-    # Note: We don't remove /etc/letsencrypt by default as it might be used by other services
-    # Users can manually remove it if they're sure it's only used by TAK
-    log "INFO" "LetsEncrypt certificates left intact at /etc/letsencrypt (remove manually if not needed by other services)"
+    # Remove LetsEncrypt certificates and configuration
+    safe_remove "/etc/letsencrypt" "LetsEncrypt certificates and configuration"
     
     # Remove renewal logs
     safe_remove "/var/log/letsencrypt-renewal.log" "LetsEncrypt renewal log"
@@ -154,21 +157,18 @@ show_summary() {
     echo "================================"
     echo ""
     echo "Cleaned up:"
-    echo "  ✅ Docker containers and volumes"
+    echo "  ✅ Docker containers, volumes, and images"
+    echo "  ✅ LetsEncrypt certificates and configuration"
     echo "  ✅ Deployment files and directories"
     echo "  ✅ System configurations"
     echo "  ✅ Cron jobs and scheduled tasks"
     echo "  ✅ Log files"
     echo ""
     echo "Note:"
-    echo "  • LetsEncrypt certificates preserved (at /etc/letsencrypt)"
-    echo "  • Docker images preserved (use 'docker system prune' to remove if desired)"
     echo "  • System packages left installed (docker, certbot, etc.)"
     echo ""
     echo "Manual cleanup (if desired):"
-    echo "  • Remove LetsEncrypt: sudo rm -rf /etc/letsencrypt"
-    echo "  • Remove Docker images: docker system prune -a"
-    echo "  • Remove packages: sudo apt remove docker.io docker-compose certbot"
+    echo "  • Remove packages: sudo apt remove docker.io docker-compose certbot default-jdk"
     echo ""
     echo "📝 Cleanup log: $CLEANUP_LOG"
 }

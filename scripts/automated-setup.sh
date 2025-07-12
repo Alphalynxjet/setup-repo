@@ -217,9 +217,9 @@ setup_letsencrypt() {
         return 1
     fi
     
-    # Setup dual renewal system
-    if ! bash "${SCRIPT_PATH}/setup-renewal-system.sh" "$config_file" setup; then
-        log_message "ERROR" "Failed to setup renewal system"
+    # Setup cron renewal system (simplified approach)
+    if ! bash "${SCRIPT_PATH}/setup-letsencrypt-cron.sh" "$config_file" setup; then
+        log_message "ERROR" "Failed to setup cron renewal system"
         return 1
     fi
     
