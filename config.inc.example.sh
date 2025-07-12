@@ -18,8 +18,6 @@ export TAK_COT_PORT=8089               				# TAK API Port [not fully tested if a
 export LETSENCRYPT=__LE_ENABLE                   	# enable LE port 8446 cert (required for ITAK)
 export LE_EMAIL=__LE_EMAIL                   		# email to send LetsEncrypt validations
 export LE_VALIDATOR=__LE_VALIDATOR             		# validator type ("web" or "dns")
-export LE_NOTIFICATION_EMAIL=__LE_NOTIFICATION_EMAIL	# email for renewal notifications (optional)
-export LE_WEBHOOK_URL=__LE_WEBHOOK_URL          	# webhook URL for renewal notifications (optional)
 
 
 ## Certificate info - Change these as needed

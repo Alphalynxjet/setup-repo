@@ -1,309 +1,99 @@
 #!/bin/bash
 
-set -e  # Exit on any error
+set -e
 
-#################################################################################
-# TAK Server Deployment Cleanup Script
-#################################################################################
+WORK_DIR="/tmp/setup-repo-run"
+BACKUP_DIR="/tmp/tak-packages-backup"
 
-# Configuration
-WORK_DIR="/opt/tak-deployment"
-LOG_FILE="/var/log/tak-deployment.log"
-CLEANUP_LOG="/var/log/tak-cleanup.log"
+echo "=== TAK Server Setup Cleanup ==="
+echo "This script will clean up everything except TAK install packages"
+echo
 
-#################################################################################
-# Script Functions
-#################################################################################
-
-# Logging function
-log() {
-    local level="$1"
-    local message="$2"
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    echo "[$timestamp] [$level] $message" | tee -a "$CLEANUP_LOG"
-}
-
-# Safe removal function with confirmation
-safe_remove() {
-    local target="$1"
-    local description="$2"
-    
-    if [ -e "$target" ]; then
-        log "INFO" "Removing $description: $target"
-        sudo rm -rf "$target"
-        log "INFO" "Successfully removed: $target"
-    else
-        log "INFO" "Not found (already clean): $target"
-    fi
-}
-
-# Stop and remove Docker containers
-cleanup_docker() {
-    log "INFO" "Cleaning up Docker containers and images..."
-    
-    # Stop TAK server container if running
-    if docker ps -q --filter "name=tak-server" | grep -q .; then
-        log "INFO" "Stopping TAK server container..."
-        docker stop tak-server || true
-    fi
-    
-    # Remove TAK server container
-    if docker ps -aq --filter "name=tak-server" | grep -q .; then
-        log "INFO" "Removing TAK server container..."
-        docker rm tak-server || true
-    fi
-    
-    # Stop and remove any tak-related containers
-    local tak_containers=$(docker ps -aq --filter "name=tak" 2>/dev/null || true)
-    if [ -n "$tak_containers" ]; then
-        log "INFO" "Removing additional TAK containers..."
-        docker rm -f $tak_containers || true
-    fi
-    
-    # Remove TAK-related images
-    local tak_images=$(docker images -q "*tak*" 2>/dev/null || true)
-    if [ -n "$tak_images" ]; then
-        log "INFO" "Removing TAK Docker images..."
-        docker rmi -f $tak_images || true
-    fi
-    
-    # Remove all unused Docker images, containers, and networks
-    log "INFO" "Removing all unused Docker resources..."
-    docker system prune -a -f || true
-    
-    # Remove TAK-related volumes
-    local tak_volumes=$(docker volume ls -q --filter "name=tak" 2>/dev/null || true)
-    if [ -n "$tak_volumes" ]; then
-        log "INFO" "Removing TAK Docker volumes..."
-        docker volume rm $tak_volumes || true
-    fi
-    
-    log "INFO" "Docker cleanup completed"
-}
-
-# Remove LetsEncrypt certificates
-cleanup_letsencrypt() {
-    log "INFO" "Cleaning up LetsEncrypt certificates..."
-    
-    # Remove certificate renewal cron jobs
-    if crontab -l 2>/dev/null | grep -q "letsencrypt\|certbot"; then
-        log "INFO" "Removing LetsEncrypt cron jobs..."
-        crontab -l 2>/dev/null | grep -v "letsencrypt\|certbot" | crontab - || true
-    fi
-    
-    # Remove LetsEncrypt certificates and configuration
-    safe_remove "/etc/letsencrypt" "LetsEncrypt certificates and configuration"
-    
-    # Remove renewal logs
-    safe_remove "/var/log/letsencrypt-renewal.log" "LetsEncrypt renewal log"
-    safe_remove "/var/log/letsencrypt" "LetsEncrypt log directory"
-    
-    log "INFO" "LetsEncrypt cleanup completed"
-}
-
-# Remove system services and configurations
-cleanup_system() {
-    log "INFO" "Cleaning up system configurations..."
-    
-    # Remove any TAK-related systemd services
-    if ls /etc/systemd/system/tak* 2>/dev/null; then
-        log "INFO" "Removing TAK systemd services..."
-        sudo rm -f /etc/systemd/system/tak*
-        sudo systemctl daemon-reload
-    fi
-    
-    # Remove any TAK-related configuration in /etc
-    safe_remove "/etc/tak" "TAK system configuration"
-    
-    log "INFO" "System cleanup completed"
-}
-
-# Remove downloaded files and working directories
-cleanup_files() {
-    log "INFO" "Cleaning up deployment files..."
-    
-    # Remove main working directory
-    safe_remove "$WORK_DIR" "main working directory"
-    
-    # Remove any TAK downloads in common locations
-    safe_remove "/tmp/tak-server*" "temporary TAK files"
-    safe_remove "/tmp/takserver*" "temporary TAK server files"
-    safe_remove "$(pwd)/tak-server*" "local TAK server files"
-    safe_remove "$(pwd)/takserver*" "local TAK server files"
-    
-    # Remove any gdown cache if it exists
-    if [ -d "$HOME/.cache/gdown" ]; then
-        safe_remove "$HOME/.cache/gdown" "gdown cache"
-    fi
-    
-    log "INFO" "File cleanup completed"
-}
-
-# Remove logs
-cleanup_logs() {
-    log "INFO" "Cleaning up deployment logs..."
-    
-    safe_remove "$LOG_FILE" "main deployment log"
-    safe_remove "/var/log/tak-automated-setup.log" "automated setup log"
-    safe_remove "/var/log/tak*" "TAK-related logs"
-    
-    log "INFO" "Log cleanup completed"
-}
-
-# Show cleanup summary
-show_summary() {
-    echo ""
-    echo "🧹 TAK Server Cleanup Completed!"
-    echo "================================"
-    echo ""
-    echo "Cleaned up:"
-    echo "  ✅ Docker containers, volumes, and images"
-    echo "  ✅ LetsEncrypt certificates and configuration"
-    echo "  ✅ Deployment files and directories"
-    echo "  ✅ System configurations"
-    echo "  ✅ Cron jobs and scheduled tasks"
-    echo "  ✅ Log files"
-    echo ""
-    echo "Note:"
-    echo "  • System packages left installed (docker, certbot, etc.)"
-    echo ""
-    echo "Manual cleanup (if desired):"
-    echo "  • Remove packages: sudo apt remove docker.io docker-compose certbot default-jdk"
-    echo ""
-    echo "📝 Cleanup log: $CLEANUP_LOG"
-}
-
-#################################################################################
-# Main Cleanup Process
-#################################################################################
-
-main() {
-    echo "🧹 TAK Server Deployment Cleanup"
-    echo "================================"
-    echo ""
-    echo "This script will remove all TAK Server deployment artifacts."
-    echo ""
-    echo "⚠️  WARNING: This will permanently delete:"
-    echo "  - TAK Server containers and data"
-    echo "  - Deployment files and configurations"
-    echo "  - Cron jobs and scheduled tasks"
-    echo "  - Log files"
-    echo ""
-    
-    # Confirmation prompt
-    read -p "Are you sure you want to proceed? (y/N): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Cleanup cancelled."
-        exit 0
-    fi
-    
-    # Create cleanup log
-    sudo mkdir -p "$(dirname "$CLEANUP_LOG")"
-    sudo touch "$CLEANUP_LOG"
-    sudo chmod 666 "$CLEANUP_LOG"
-    
-    log "INFO" "Starting TAK Server deployment cleanup"
-    
-    # Run cleanup steps
-    cleanup_docker
-    cleanup_letsencrypt
-    cleanup_system
-    cleanup_files
-    cleanup_logs
-    
-    # Show summary
-    show_summary
-    
-    log "INFO" "Cleanup process completed successfully"
-}
-
-# Show usage information
-usage() {
-    echo "TAK Server Deployment Cleanup Script"
-    echo "===================================="
-    echo ""
-    echo "This script removes all TAK Server deployment artifacts created by run.sh"
-    echo ""
-    echo "Usage: $0 [options]"
-    echo ""
-    echo "Options:"
-    echo "  -h, --help              Show this help message"
-    echo "  -f, --force             Skip confirmation prompt"
-    echo ""
-    echo "What gets cleaned up:"
-    echo "  • Docker containers and volumes"
-    echo "  • Deployment files ($WORK_DIR)"
-    echo "  • System configurations"
-    echo "  • Cron jobs and scheduled tasks"
-    echo "  • Log files"
-    echo ""
-    echo "What gets preserved:"
-    echo "  • LetsEncrypt certificates (/etc/letsencrypt)"
-    echo "  • Docker images (use 'docker system prune' separately)"
-    echo "  • System packages (docker, certbot, etc.)"
-    echo ""
-    echo "Example:"
-    echo "  bash cleanup.sh         # Interactive cleanup"
-    echo "  bash cleanup.sh -f      # Force cleanup without confirmation"
-}
-
-# Handle command line arguments
-case "${1:-}" in
-    -h|--help)
-        usage
-        exit 0
-        ;;
-    -f|--force)
-        FORCE_CLEANUP=true
-        ;;
-    "")
-        # No arguments - proceed with interactive cleanup
-        ;;
-    *)
-        echo "Unknown argument: $1"
-        usage
-        exit 1
-        ;;
-esac
-
-# Check if running with appropriate privileges
-if [[ $EUID -eq 0 ]]; then
-    log "WARN" "Running as root"
-else
-    # Check sudo access
-    if ! sudo -n true 2>/dev/null; then
-        echo "This script requires sudo access for cleanup operations."
-        echo "You may be prompted for your password."
-        echo ""
-    fi
+# Check if work directory exists
+if [ ! -d "$WORK_DIR" ]; then
+    echo "No work directory found at $WORK_DIR"
+    echo "Nothing to clean up."
+    exit 0
 fi
 
-# Skip confirmation if force flag is used
-if [ "${FORCE_CLEANUP:-}" = "true" ]; then
-    echo "🧹 TAK Server Deployment Cleanup (Force Mode)"
-    echo "=============================================="
-    echo ""
-    
-    # Create cleanup log
-    sudo mkdir -p "$(dirname "$CLEANUP_LOG")"
-    sudo touch "$CLEANUP_LOG"
-    sudo chmod 666 "$CLEANUP_LOG"
-    
-    log "INFO" "Starting forced TAK Server deployment cleanup"
-    
-    # Run cleanup steps
-    cleanup_docker
-    cleanup_letsencrypt
-    cleanup_system
-    cleanup_files
-    cleanup_logs
-    
-    # Show summary
-    show_summary
-    
-    log "INFO" "Forced cleanup process completed successfully"
+cd "$WORK_DIR"
+
+# Backup TAK packages before cleanup
+if [ -d "tak-pack" ] && [ "$(ls -A tak-pack 2>/dev/null)" ]; then
+    echo "Backing up TAK packages..."
+    mkdir -p "$BACKUP_DIR"
+    cp tak-pack/*tak* "$BACKUP_DIR/" 2>/dev/null || true
+    echo "TAK packages backed up to: $BACKUP_DIR"
+fi
+
+# Stop any running services
+echo "Stopping TAK services..."
+if command -v systemctl &> /dev/null; then
+    sudo systemctl stop takserver 2>/dev/null || true
+    sudo systemctl disable takserver 2>/dev/null || true
+fi
+
+# Stop Docker containers if running
+if command -v docker &> /dev/null; then
+    echo "Stopping Docker containers..."
+    docker-compose down 2>/dev/null || true
+    docker stop $(docker ps -q --filter "name=tak") 2>/dev/null || true
+fi
+
+# Remove Docker images related to TAK
+if command -v docker &> /dev/null; then
+    echo "Removing TAK Docker images..."
+    docker images | grep -i tak | awk '{print $3}' | xargs docker rmi -f 2>/dev/null || true
+fi
+
+# Remove installed TAK packages (Ubuntu/Debian)
+if command -v dpkg &> /dev/null; then
+    echo "Removing installed TAK packages..."
+    sudo dpkg -r takserver 2>/dev/null || true
+    sudo dpkg -r tak-server 2>/dev/null || true
+fi
+
+# Remove TAK user and directories
+echo "Removing TAK user and directories..."
+sudo userdel -r tak 2>/dev/null || true
+sudo rm -rf /opt/tak 2>/dev/null || true
+sudo rm -rf /etc/tak 2>/dev/null || true
+
+# Clean up work directory but preserve package backup info
+echo "Cleaning work directory..."
+cd /tmp
+rm -rf "$WORK_DIR"
+
+# Restore TAK packages to a clean location
+if [ -d "$BACKUP_DIR" ] && [ "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
+    mkdir -p "$WORK_DIR/tak-pack"
+    mv "$BACKUP_DIR"/* "$WORK_DIR/tak-pack/" 2>/dev/null || true
+    rmdir "$BACKUP_DIR" 2>/dev/null || true
+    echo "TAK packages restored to: $WORK_DIR/tak-pack/"
+fi
+
+# Clean up any certificates and keys
+sudo rm -rf /etc/ssl/certs/tak* 2>/dev/null || true
+sudo rm -rf /etc/ssl/private/tak* 2>/dev/null || true
+
+# Remove any systemd service files
+sudo rm -f /etc/systemd/system/takserver.service 2>/dev/null || true
+sudo rm -f /etc/systemd/system/tak*.service 2>/dev/null || true
+sudo rm -f /etc/systemd/system/tak*.timer 2>/dev/null || true
+sudo systemctl daemon-reload 2>/dev/null || true
+
+# Clean up any firewall rules (be careful here)
+if command -v ufw &> /dev/null; then
+    echo "Note: Firewall rules for TAK may still be active."
+    echo "Review with: sudo ufw status"
+fi
+
+echo
+echo "=== Cleanup Complete ==="
+if [ -d "$WORK_DIR/tak-pack" ]; then
+    echo "TAK packages preserved in: $WORK_DIR/tak-pack/"
+    echo "You can now run ./run.sh again for testing."
 else
-    # Run interactive cleanup
-    main "$@"
+    echo "No TAK packages were found to preserve."
+    echo "Download TAK packages to $WORK_DIR/tak-pack/ before running ./run.sh"
 fi

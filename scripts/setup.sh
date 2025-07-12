@@ -14,26 +14,17 @@ install_init
 
 ## TAK Package
 #
-source ${SCRIPT_PATH}/inc/package.sh
+source scripts/inc/package.sh
 
 ## Inputs
 #
 CONFIG_TMPL="config.inc.example.sh"
-
-# Check if running in automated mode (config already exists)
-if [ -f "${ROOT_PATH}/config.inc.sh" ]; then
-    # Load existing config for automated setup
-    source ${ROOT_PATH}/config.inc.sh
-    msg $info "Using existing configuration from automated setup"
-else
-    # Interactive mode
-    source ${SCRIPT_PATH}/inc/inputs.sh
-fi
+source scripts/inc/inputs.sh
 
 
 ## Tear-Down/Clean-up
 #
-${SCRIPT_PATH}/${INSTALLER}/tear-down.sh ${TAK_ALIAS}
+scripts/${INSTALLER}/tear-down.sh ${TAK_ALIAS}
 
 
 ## TAK-Tools Config
@@ -75,8 +66,10 @@ info ${RELEASE_PATH} ""
 
 msg $warn "\nUpdate the config: ${RELEASE_PATH}/config.inc.sh"
 
-# Skip vi editor prompt for automated setup
-# Configuration is already generated in automated-setup.sh
+prompt "Do you want to inline edit the conf with vi [y/N]?" EDIT_CONF
+if [[ ${EDIT_CONF} =~ ^[Yy]$ ]];then
+	vi ${RELEASE_PATH}/config.inc.sh
+fi
 
 conf ${TAK_ALIAS}
 letsencrypt

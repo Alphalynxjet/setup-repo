@@ -3,18 +3,6 @@
 SCRIPT_PATH=$(realpath "$(dirname "${BASH_SOURCE[0]}")/..")
 source ${SCRIPT_PATH}/inc/functions.sh
 
-# Ensure required commands are available
-for cmd in qrencode zip; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        msg $warn "$cmd not found, installing..."
-        if [ -f /etc/debian_version ]; then
-            sudo apt-get update && sudo apt-get install -y "$cmd"
-        elif [ -f /etc/redhat-release ]; then
-            sudo yum install -y "$cmd"
-        fi
-    fi
-done
-
 conf ${1}
 
 export PATH=${ROOT_PATH}/jdk/bin:${PATH}
