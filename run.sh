@@ -4,12 +4,12 @@ set -e  # Exit on any error
 
 #################################################################################
 
-export TAK_URI="tak.yourdomain.com"                    # Your TAK Server domain (FQDN)
-export TAK_ALIAS="tak-server"                          # Server name/identifier
-export LE_EMAIL="admin@yourdomain.com"                 # Email for LetsEncrypt and notifications
+export TAK_URI="testserver4.takgrid.com"                    # Your TAK Server domain (FQDN)
+export TAK_ALIAS="testserver4"                          # Server name/identifier
+export LE_EMAIL="yeyee3245352@gmail.com.com"                 # Email for LetsEncrypt and notifications
 
 # Deployment Configuration
-REPO_URL="https://github.com/Alphalynxjet/takgrid"     # Repository URL
+REPO_URL="https://github.com/Alphalynxjet/setup-repo"     # Repository URL
 WORK_DIR="/opt/tak-deployment"                         # Working directory
 REPO_DIR="$WORK_DIR/takgrid"                           # Repository directory
 LOG_FILE="/var/log/tak-deployment.log"                 # Deployment log
