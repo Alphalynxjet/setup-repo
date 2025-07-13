@@ -110,8 +110,7 @@ if [ "$BEFORE_MTIME" != "$AFTER_MTIME" ]; then
         -passout pass:${CA_PASS} >> /var/log/tak-cert-renewal.log 2>&1
     
     # Import to Java keystore with noprompt to overwrite existing
-    keytool -importkeystore \
-        -noprompt \
+    echo "yes" | keytool -importkeystore \
         -srckeystore files/letsencrypt.p12 \
         -srcstorepass ${CA_PASS} \
         -destkeystore files/letsencrypt.jks \
@@ -183,130 +182,11 @@ fi
 msg $info "Current cron jobs:"
 crontab -l 2>/dev/null | grep -E "(letsencrypt|tak)" || echo "No TAK-related cron jobs found"
 
-# Create certificate renewal test script
-TEST_SCRIPT="${SCRIPT_PATH}/test-cert-renewal.sh"
-msg $info "Creating test script: ${TEST_SCRIPT}"
-
-cat > "${TEST_SCRIPT}" << 'EOF'
-#!/bin/bash
-
-# Certificate Renewal Test Script
-# This script simulates certificate renewal to test the complete workflow
-
-echo "=== TAK Server Certificate Renewal Test ==="
-echo "This script will test the complete certificate renewal and import workflow"
-echo
-
-# Set full PATH for consistency
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-SCRIPT_PATH=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
-source ${SCRIPT_PATH}/inc/functions.sh
-
-# Find the TAK_ALIAS directory
-RELEASE_DIR="${SCRIPT_PATH}/../release"
-TAK_ALIAS=""
-
-for dir in "${RELEASE_DIR}"/*; do
-    if [ -d "$dir" ] && [ -f "$dir/config.inc.sh" ]; then
-        TAK_ALIAS=$(basename "$dir")
-        break
-    fi
-done
-
-if [ -z "$TAK_ALIAS" ]; then
-    echo "ERROR: No TAK release directory found"
-    exit 1
-fi
-
-# Load configuration
-conf ${TAK_ALIAS}
-
-echo "TAK_ALIAS: ${TAK_ALIAS}"
-echo "TAK_URI: ${TAK_URI}"
-echo "LetsEncrypt enabled: ${LETSENCRYPT}"
-echo
-
-if [[ "$LETSENCRYPT" != "true" ]]; then
-    echo "ERROR: LetsEncrypt not enabled in configuration"
-    exit 1
-fi
-
-# Check certificate file
-CERT_FILE="/etc/letsencrypt/live/${TAK_URI}/fullchain.pem"
-if [ ! -f "$CERT_FILE" ]; then
-    echo "ERROR: Certificate file not found: $CERT_FILE"
-    exit 1
-fi
-
-echo "Certificate file found: $CERT_FILE"
-
-# Show current certificate info
-echo "Current certificate info:"
-openssl x509 -in "$CERT_FILE" -noout -dates
-echo
-
-# Show current certificate modification time
-echo "Current certificate modification time:"
-ls -la "$CERT_FILE"
-echo
-
-echo "=== Testing Certificate Import Workflow ==="
-echo "Force renewing certificate to test real workflow..."
-
-# Force certificate renewal for testing
-echo "Running: certbot renew --force-renewal --quiet"
-/usr/bin/certbot renew --force-renewal --quiet
-
-if [ $? -eq 0 ]; then
-    echo "Certificate force renewal completed successfully"
-else
-    echo "ERROR: Certificate force renewal failed"
-    exit 1
-fi
-
-echo "New certificate modification time:"
-ls -la "$CERT_FILE"
-echo
-
-echo "=== Running Certificate Import and Restart ==="
-echo "This will import the certificates and restart TAK server..."
-echo
-
-# Run the renewal script
-"${SCRIPT_PATH}/letsencrypt-auto-renew.sh"
-
-echo
-echo "=== Test Results ==="
-echo "Check the log file for detailed results:"
-echo "tail -20 /var/log/tak-cert-renewal.log"
-echo
-
-echo "Check TAK server status:"
-echo "${SCRIPT_PATH}/system.sh ${TAK_ALIAS} status"
-echo
-
-echo "Check if new certificate is being served:"
-echo "openssl s_client -connect ${TAK_URI}:8446 -servername ${TAK_URI} < /dev/null 2>/dev/null | openssl x509 -noout -dates"
-echo
-
-# Restore original timestamp (optional)
-# touch -d "@$ORIGINAL_TIME" "$CERT_FILE"
-
-echo "=== Test Complete ==="
-echo "Review the above output to verify the renewal process worked correctly."
-EOF
-
-# Make the test script executable
-chmod +x "${TEST_SCRIPT}"
-msg $success "Created test script: ${TEST_SCRIPT}"
-
 echo
 msg $success "LetsEncrypt auto-renewal setup completed!"
 msg $info "Certificate renewal will run daily at 2 AM"
 msg $info "Renewal logs will be written to: /var/log/tak-cert-renewal.log"
 msg $info "To manually test renewal: ${RENEWAL_SCRIPT}"
-msg $info "To test the complete workflow: ${TEST_SCRIPT}"
 
 echo
 
