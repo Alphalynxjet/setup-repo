@@ -6,6 +6,6 @@ zulu*
 config.inc.sh
 config.inc.template.sh
 
-scripts/post-install*
+scripts/post-install-example.sh
 .claude
 /original

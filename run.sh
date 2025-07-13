@@ -277,37 +277,13 @@ chmod +x auto_responses.exp
 echo "Running automated setup..."
 ./auto_responses.exp "$DOMAIN" "$EMAIL"
 
-echo
-echo "=== Automated Setup Complete ==="
-echo "TAK Server has been configured with:"
-echo "  - Domain: $DOMAIN"
-echo "  - Email: $EMAIL"
-echo "  - Installer: docker"
-echo "  - LetsEncrypt: Enabled"
-echo
-
 # Display admin credentials if captured
 if [ -f "admin_credentials.txt" ]; then
-    echo "=== TAK Admin Credentials ==="
+    echo "=== TAKSERVER Credentials ==="
     cat admin_credentials.txt
     echo
+    echo " TAKServer should be running and accessible at https://$DOMAIN:8446"
+    
+    # Delete the credentials file
+    rm -f admin_credentials.txt
 fi
-
-echo "Prerequisites installed:"
-echo "  - unzip, zip"
-echo "  - docker.io"
-echo "  - python3-pip"
-echo "  - gdown"
-echo "  - git"
-echo "  - expect"
-echo
-echo "TAK Server package downloaded to: $TAK_PACK_DIR/"
-echo "Configuration created: ${DOMAIN//\./-}"
-echo "Installation directory: $WORK_DIR"
-echo
-echo "Next steps:"
-echo "  1. Ensure DNS for $DOMAIN points to this server"
-echo "  2. Open required firewall ports (8089, 8443, 8446)"
-echo "  3. TAK Server should be running and accessible at https://$DOMAIN:8443"
-echo
-echo "To clean up and start over, run: $WORK_DIR/cleanup.sh"
