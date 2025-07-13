@@ -151,6 +151,8 @@ sudo systemctl daemon-reload 2>/dev/null || true
 echo "Removing certificate renewal files..."
 rm -f "$WORK_DIR/scripts/letsencrypt-auto-renew.sh" 2>/dev/null || true
 rm -f "$OLD_WORK_DIR/scripts/letsencrypt-auto-renew.sh" 2>/dev/null || true
+rm -f "$WORK_DIR/scripts/test-cert-renewal.sh" 2>/dev/null || true
+rm -f "$OLD_WORK_DIR/scripts/test-cert-renewal.sh" 2>/dev/null || true
 rm -f /var/log/tak-cert-renewal.log 2>/dev/null || true
 
 # Clean up any firewall rules (be careful here)
