@@ -113,6 +113,12 @@ fi
 sudo rm -rf /etc/ssl/certs/tak* 2>/dev/null || true
 sudo rm -rf /etc/ssl/private/tak* 2>/dev/null || true
 
+# Remove LetsEncrypt certificates and configuration
+echo "Removing LetsEncrypt certificates..."
+sudo rm -rf /etc/letsencrypt/ 2>/dev/null || true
+sudo rm -rf /var/lib/letsencrypt/ 2>/dev/null || true
+sudo rm -rf /var/log/letsencrypt/ 2>/dev/null || true
+
 # Remove any systemd service files
 sudo rm -f /etc/systemd/system/takserver.service 2>/dev/null || true
 sudo rm -f /etc/systemd/system/tak*.service 2>/dev/null || true

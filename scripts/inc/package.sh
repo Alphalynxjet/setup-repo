@@ -21,36 +21,7 @@ for i in "${!MATCHES[@]}";do
   msg $info "$((i + 1)). $(basename "${MATCHES[i]}")"
 done
 
-if [[ "$AUTOMATED_SETUP" == "true" ]]; then
-    # Auto-select package based on installer type
-    TAK_PACKAGE_SELECTION=""
-    for i in "${!MATCHES[@]}";do
-        PACKAGE_FILE="${MATCHES[i]}"
-        if [[ "$INSTALLER" == "docker" && "${PACKAGE_FILE}" == *.zip ]]; then
-            TAK_PACKAGE_SELECTION=$((i + 1))
-            echo "Automated setup: selecting package $TAK_PACKAGE_SELECTION ($(basename "${PACKAGE_FILE}"))"
-            break
-        elif [[ "$INSTALLER" == "ubuntu" && "${PACKAGE_FILE}" == *.deb ]]; then
-            TAK_PACKAGE_SELECTION=$((i + 1))
-            echo "Automated setup: selecting package $TAK_PACKAGE_SELECTION ($(basename "${PACKAGE_FILE}"))"
-            break
-        fi
-    done
-    
-    # If no matching package found, select first one and adjust installer type
-    if [[ -z "$TAK_PACKAGE_SELECTION" ]]; then
-        TAK_PACKAGE_SELECTION=1
-        FIRST_PACKAGE="${MATCHES[0]}"
-        if [[ "${FIRST_PACKAGE}" == *.zip ]]; then
-            INSTALLER="docker"
-        elif [[ "${FIRST_PACKAGE}" == *.deb ]]; then
-            INSTALLER="ubuntu"
-        fi
-        echo "Automated setup: auto-selecting first package and adjusting installer to $INSTALLER"
-    fi
-else
-    prompt "Which TAK install package number:" TAK_PACKAGE_SELECTION
-fi
+prompt "Which TAK install package number:" TAK_PACKAGE_SELECTION
 
 if [[ "${TAK_PACKAGE_SELECTION}" -gt 0 && "${TAK_PACKAGE_SELECTION}" -le "${#MATCHES[@]}" ]];then
  	TAK_PACKAGE="${MATCHES[$((TAK_PACKAGE_SELECTION - 1))]}"

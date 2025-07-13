@@ -64,15 +64,11 @@ info ${RELEASE_PATH} "  User: martiuser"
 info ${RELEASE_PATH} "  Password: ${TAK_DB_PASS}" 
 info ${RELEASE_PATH} ""
 
-if [[ "$AUTOMATED_SETUP" == "true" ]]; then
-    echo "Automated setup: skipping manual config editing..."
-else
-    msg $warn "\nUpdate the config: ${RELEASE_PATH}/config.inc.sh"
+msg $warn "\nUpdate the config: ${RELEASE_PATH}/config.inc.sh"
 
-    prompt "Do you want to inline edit the conf with vi [y/N]?" EDIT_CONF
-    if [[ ${EDIT_CONF} =~ ^[Yy]$ ]];then
-        vi ${RELEASE_PATH}/config.inc.sh
-    fi
+prompt "Do you want to inline edit the conf with vi [y/N]?" EDIT_CONF
+if [[ ${EDIT_CONF} =~ ^[Yy]$ ]];then
+	vi ${RELEASE_PATH}/config.inc.sh
 fi
 
 conf ${TAK_ALIAS}
