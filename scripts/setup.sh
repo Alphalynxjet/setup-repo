@@ -66,13 +66,9 @@ info ${RELEASE_PATH} ""
 
 msg $warn "\nUpdate the config: ${RELEASE_PATH}/config.inc.sh"
 
-if [ -n "$AUTO_DOMAIN" ]; then
-    echo "Skipping configuration edit (automated)"
-else
-    prompt "Do you want to inline edit the conf with vi [y/N]?" EDIT_CONF
-    if [[ ${EDIT_CONF} =~ ^[Yy]$ ]];then
-        vi ${RELEASE_PATH}/config.inc.sh
-    fi
+prompt "Do you want to inline edit the conf with vi [y/N]?" EDIT_CONF
+if [[ ${EDIT_CONF} =~ ^[Yy]$ ]];then
+	vi ${RELEASE_PATH}/config.inc.sh
 fi
 
 conf ${TAK_ALIAS}

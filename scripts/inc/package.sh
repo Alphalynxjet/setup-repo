@@ -21,13 +21,7 @@ for i in "${!MATCHES[@]}";do
   msg $info "$((i + 1)). $(basename "${MATCHES[i]}")"
 done
 
-# Auto-select the first package if in automated mode
-if [ -n "$AUTO_DOMAIN" ]; then
-    TAK_PACKAGE_SELECTION=1
-    echo "Automated selection: Package 1 - $(basename "${MATCHES[0]}")"
-else
-    prompt "Which TAK install package number:" TAK_PACKAGE_SELECTION
-fi
+prompt "Which TAK install package number:" TAK_PACKAGE_SELECTION
 
 if [[ "${TAK_PACKAGE_SELECTION}" -gt 0 && "${TAK_PACKAGE_SELECTION}" -le "${#MATCHES[@]}" ]];then
  	TAK_PACKAGE="${MATCHES[$((TAK_PACKAGE_SELECTION - 1))]}"

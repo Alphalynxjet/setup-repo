@@ -49,13 +49,8 @@ if [ "$STARTED" = "true" ];then
 	if [ ! -f "${SCRIPT_PATH}/post-install.sh" ];then
 		cp ${SCRIPT_PATH}/post-install-example.sh ${SCRIPT_PATH}/post-install.sh
 	else
-		echo
-		if [ -n "$AUTO_DOMAIN" ]; then
-		    POST_INSTALL="y"
-		    echo "Automatically running post-install script (automated mode)"
-		else
-		    prompt "Kick off post-install script [y/N]? " POST_INSTALL
-		fi
+		echo 
+		prompt "Kick off post-install script [y/N]? " POST_INSTALL
 		if [[ ${POST_INSTALL} =~ ^[Yy]$ ]];then
 		    ${SCRIPT_PATH}/post-install.sh ${TAK_ALIAS}
 		fi
