@@ -115,6 +115,14 @@ rm -rf "$OLD_WORK_DIR" 2>/dev/null || true
 # Remove admin credentials file
 rm -f "$ACTIVE_DIR/admin_credentials.txt" 2>/dev/null || true
 
+# Remove cron jobs related to certificate renewal
+echo "Removing certificate renewal cron jobs..."
+if crontab -l 2>/dev/null | grep -v "letsencrypt-auto-renew.sh" | crontab - 2>/dev/null; then
+    echo "Certificate renewal cron job removed"
+else
+    echo "No certificate renewal cron job found or failed to remove"
+fi
+
 # Restore TAK packages to a clean location
 if [ -d "$BACKUP_DIR" ] && [ "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
     mkdir -p "$WORK_DIR/tak-pack"
@@ -138,6 +146,12 @@ sudo rm -f /etc/systemd/system/takserver.service 2>/dev/null || true
 sudo rm -f /etc/systemd/system/tak*.service 2>/dev/null || true
 sudo rm -f /etc/systemd/system/tak*.timer 2>/dev/null || true
 sudo systemctl daemon-reload 2>/dev/null || true
+
+# Remove certificate renewal script and log files
+echo "Removing certificate renewal files..."
+rm -f "$WORK_DIR/scripts/letsencrypt-auto-renew.sh" 2>/dev/null || true
+rm -f "$OLD_WORK_DIR/scripts/letsencrypt-auto-renew.sh" 2>/dev/null || true
+rm -f /var/log/tak-cert-renewal.log 2>/dev/null || true
 
 # Clean up any firewall rules (be careful here)
 if command -v ufw &> /dev/null; then
