@@ -252,17 +252,20 @@ ls -la "$CERT_FILE"
 echo
 
 echo "=== Testing Certificate Import Workflow ==="
-echo "Simulating certificate renewal by touching certificate files..."
+echo "Force renewing certificate to test real workflow..."
 
-# Store original modification time
-ORIGINAL_TIME=$(stat -c %Y "$CERT_FILE")
+# Force certificate renewal for testing
+echo "Running: certbot renew --force-renewal --quiet"
+/usr/bin/certbot renew --force-renewal --quiet
 
-# Simulate certificate renewal
-touch "$CERT_FILE"
-touch "/etc/letsencrypt/live/${TAK_URI}/privkey.pem"
+if [ $? -eq 0 ]; then
+    echo "Certificate force renewal completed successfully"
+else
+    echo "ERROR: Certificate force renewal failed"
+    exit 1
+fi
 
-echo "Certificate files touched to simulate renewal"
-echo "New modification time:"
+echo "New certificate modification time:"
 ls -la "$CERT_FILE"
 echo
 
