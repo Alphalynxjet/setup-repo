@@ -88,7 +88,6 @@ fi
 echo "Downloading setup-repo from GitHub..."
 git clone "$REPO_URL" "$WORK_DIR"
 cd "$WORK_DIR"
-git checkout v2
 
 echo "Making all files executable..."
 find . -type f -name "*.sh" -exec chmod +x {} \;
