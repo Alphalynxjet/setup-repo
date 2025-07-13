@@ -8,6 +8,4 @@ config.inc.template.sh
 
 scripts/post-install*
 .claude
-./run.sh
-run.sh
 /original
