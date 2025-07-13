@@ -281,6 +281,9 @@ chmod +x auto_responses.exp
 echo "Running automated setup..."
 ./auto_responses.exp "$DOMAIN" "$EMAIL"
 
+# Wait for any background processes to finish output
+sleep 0.5
+
 # Display admin credentials if captured
 if [ -f "admin_credentials.txt" ]; then
     echo "=== TAKSERVER Credentials ==="
