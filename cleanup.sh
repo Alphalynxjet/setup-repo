@@ -2,21 +2,31 @@
 
 set -e
 
-WORK_DIR="/tmp/setup-repo-run"
+WORK_DIR="/opt/takgrid"
+OLD_WORK_DIR="/tmp/setup-repo-run"
 BACKUP_DIR="/tmp/tak-packages-backup"
 
 echo "=== TAK Server Setup Cleanup ==="
 echo "This script will clean up everything except TAK install packages"
 echo
 
-# Check if work directory exists
-if [ ! -d "$WORK_DIR" ]; then
-    echo "No work directory found at $WORK_DIR"
+# Check if work directory exists (check both old and new locations)
+if [ ! -d "$WORK_DIR" ] && [ ! -d "$OLD_WORK_DIR" ]; then
+    echo "No work directory found at $WORK_DIR or $OLD_WORK_DIR"
     echo "Nothing to clean up."
     exit 0
 fi
 
-cd "$WORK_DIR"
+# Use the directory that exists
+if [ -d "$WORK_DIR" ]; then
+    ACTIVE_DIR="$WORK_DIR"
+    echo "Using work directory: $WORK_DIR"
+else
+    ACTIVE_DIR="$OLD_WORK_DIR"
+    echo "Using old work directory: $OLD_WORK_DIR"
+fi
+
+cd "$ACTIVE_DIR"
 
 # Backup TAK packages before cleanup
 if [ -d "tak-pack" ] && [ "$(ls -A tak-pack 2>/dev/null)" ]; then
@@ -96,10 +106,14 @@ sudo userdel -r tak 2>/dev/null || true
 sudo rm -rf /opt/tak 2>/dev/null || true
 sudo rm -rf /etc/tak 2>/dev/null || true
 
-# Clean up work directory but preserve package backup info
-echo "Cleaning work directory..."
+# Clean up work directories but preserve package backup info
+echo "Cleaning work directories..."
 cd /tmp
-rm -rf "$WORK_DIR"
+rm -rf "$WORK_DIR" 2>/dev/null || true
+rm -rf "$OLD_WORK_DIR" 2>/dev/null || true
+
+# Remove admin credentials file
+rm -f "$ACTIVE_DIR/admin_credentials.txt" 2>/dev/null || true
 
 # Restore TAK packages to a clean location
 if [ -d "$BACKUP_DIR" ] && [ "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]; then
@@ -135,8 +149,11 @@ echo
 echo "=== Cleanup Complete ==="
 if [ -d "$WORK_DIR/tak-pack" ]; then
     echo "TAK packages preserved in: $WORK_DIR/tak-pack/"
-    echo "You can now run ./run.sh again for testing."
+    echo "You can now run the installation script again for testing."
 else
     echo "No TAK packages were found to preserve."
-    echo "Download TAK packages to $WORK_DIR/tak-pack/ before running ./run.sh"
+    echo "Download TAK packages to $WORK_DIR/tak-pack/ before running the installation script."
 fi
+echo
+echo "To reinstall, run:"
+echo "  curl -sSL https://raw.githubusercontent.com/Alphalynxjet/setup-repo/main/run.sh | bash -s <domain> <email>"

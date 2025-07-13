@@ -77,7 +77,7 @@ echo
 echo "=== Downloading Setup Repository ==="
 
 REPO_URL="https://github.com/Alphalynxjet/setup-repo"
-WORK_DIR="/tmp/setup-repo-run"
+WORK_DIR="/opt/takgrid"
 
 # Clean any existing work directory
 if [ -d "$WORK_DIR" ]; then
@@ -85,12 +85,10 @@ if [ -d "$WORK_DIR" ]; then
     rm -rf "$WORK_DIR"
 fi
 
-# Create work directory
-mkdir -p "$WORK_DIR"
-cd "$WORK_DIR"
-
 echo "Downloading setup-repo from GitHub..."
-git clone "$REPO_URL" .
+git clone "$REPO_URL" "$WORK_DIR"
+cd "$WORK_DIR"
+git checkout v2
 
 echo "Making all files executable..."
 find . -type f -name "*.sh" -exec chmod +x {} \;
@@ -231,7 +229,11 @@ expect "LetsEncrypt Validator*:" {
     send "web\r"
 }
 
-# Skip config editing - match exact text
+# Handle remaining prompts and capture admin credentials
+set admin_username ""
+set admin_password ""
+set capture_next_line 0
+
 expect {
     "Do you want to inline edit the conf with vi*" {
         send "n\r"
@@ -245,7 +247,20 @@ expect {
         send "\r"
         exp_continue
     }
+    -re "Username: (.*)" {
+        set admin_username $expect_out(1,string)
+        exp_continue
+    }
+    -re "Password: (.*)" {
+        set admin_password $expect_out(1,string)
+        exp_continue
+    }
     eof {
+        # Write credentials to file for later retrieval
+        set fp [open "admin_credentials.txt" w]
+        puts $fp "TAK Admin Username: $admin_username"
+        puts $fp "TAK Admin Password: $admin_password"
+        close $fp
         exit 0
     }
     timeout {
@@ -268,20 +283,32 @@ echo "=== Automated Setup Complete ==="
 echo "TAK Server has been configured with:"
 echo "  - Domain: $DOMAIN"
 echo "  - Email: $EMAIL"
-echo "  - Installer: $INSTALLER_TYPE"
+echo "  - Installer: docker"
 echo "  - LetsEncrypt: Enabled"
 echo
+
+# Display admin credentials if captured
+if [ -f "admin_credentials.txt" ]; then
+    echo "=== TAK Admin Credentials ==="
+    cat admin_credentials.txt
+    echo
+fi
+
 echo "Prerequisites installed:"
 echo "  - unzip, zip"
 echo "  - docker.io"
 echo "  - python3-pip"
 echo "  - gdown"
 echo "  - git"
+echo "  - expect"
 echo
 echo "TAK Server package downloaded to: $TAK_PACK_DIR/"
 echo "Configuration created: ${DOMAIN//\./-}"
+echo "Installation directory: $WORK_DIR"
 echo
 echo "Next steps:"
 echo "  1. Ensure DNS for $DOMAIN points to this server"
 echo "  2. Open required firewall ports (8089, 8443, 8446)"
 echo "  3. TAK Server should be running and accessible at https://$DOMAIN:8443"
+echo
+echo "To clean up and start over, run: $WORK_DIR/cleanup.sh"
