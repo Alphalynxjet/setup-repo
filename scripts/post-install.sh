@@ -37,12 +37,20 @@ cat > "${RENEWAL_SCRIPT}" << 'EOF'
 SCRIPT_PATH=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 source ${SCRIPT_PATH}/inc/functions.sh
 
-# Get the first TAK_ALIAS directory (should only be one in automated setup)
+# Find the TAK_ALIAS directory (exclude cert-backup and look for config.inc.sh)
 RELEASE_DIR="${SCRIPT_PATH}/../release"
-TAK_ALIAS=$(ls "${RELEASE_DIR}" | head -n1)
+TAK_ALIAS=""
+
+# Look for directories that contain config.inc.sh (the actual TAK installation)
+for dir in "${RELEASE_DIR}"/*; do
+    if [ -d "$dir" ] && [ -f "$dir/config.inc.sh" ]; then
+        TAK_ALIAS=$(basename "$dir")
+        break
+    fi
+done
 
 if [ -z "$TAK_ALIAS" ]; then
-    echo "$(date): ERROR - No TAK release directory found" >> /var/log/tak-cert-renewal.log
+    echo "$(date): ERROR - No TAK release directory with config.inc.sh found" >> /var/log/tak-cert-renewal.log
     exit 1
 fi
 
