@@ -246,6 +246,10 @@ expect {
         send "\r"
         exp_continue
     }
+    "Kick off post-install script*" {
+        send "y\r"
+        exp_continue
+    }
     -re "Username: (.*)" {
         set admin_username $expect_out(1,string)
         exp_continue
