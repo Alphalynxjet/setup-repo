@@ -67,3 +67,26 @@ if systemctl is-active --quiet nodered.service; then
 else
     msg $info "Node-RED service is not running, skipping restart"
 fi
+
+# Restart Mumble server if it's running to reload certificates
+if systemctl is-active --quiet mumble-server; then
+    msg $info "Restarting Mumble server to reload certificates..."
+    # Copy new certificates to Mumble directory
+    if [ -d "/etc/mumble-server/certs" ]; then
+        sudo cp /etc/letsencrypt/live/${TAK_URI}/fullchain.pem /etc/mumble-server/certs/
+        sudo cp /etc/letsencrypt/live/${TAK_URI}/privkey.pem /etc/mumble-server/certs/
+        sudo chown -R mumble-server:mumble-server /etc/mumble-server/certs/
+        sudo chmod 640 /etc/mumble-server/certs/fullchain.pem
+        sudo chmod 640 /etc/mumble-server/certs/privkey.pem
+    fi
+    
+    sudo systemctl restart mumble-server
+    sleep 2
+    if systemctl is-active --quiet mumble-server; then
+        msg $success "Mumble server restarted successfully"
+    else
+        msg $warn "Mumble server failed to restart"
+    fi
+else
+    msg $info "Mumble server is not running, skipping restart"
+fi

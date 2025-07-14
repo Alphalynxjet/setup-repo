@@ -293,6 +293,15 @@ echo "Installing Node-RED with HTTPS support..."
 # Wait for Node-RED to start
 sleep 2
 
+# Install Mumble Server
+echo
+echo "=== Installing Mumble Server ==="
+echo "Installing Mumble server with SSL support..."
+./scripts/mumble-setup.sh
+
+# Wait for Mumble to start
+sleep 2
+
 # Append Node-RED credentials to admin_credentials.txt if Node-RED installed
 NODERED_CREDS_FILE=""
 if [ -f "tak-*/node-red-credentials.txt" ]; then
@@ -306,6 +315,21 @@ if [ -n "$NODERED_CREDS_FILE" ]; then
     echo "" >> admin_credentials.txt
     cat "$NODERED_CREDS_FILE" >> admin_credentials.txt
     rm -f "$NODERED_CREDS_FILE"
+fi
+
+# Append Mumble credentials to admin_credentials.txt if Mumble installed
+MUMBLE_CREDS_FILE=""
+if [ -f "tak-*/mumble-credentials.txt" ]; then
+    MUMBLE_CREDS_FILE=$(ls tak-*/mumble-credentials.txt | head -1)
+elif [ -f "mumble-credentials.txt" ]; then
+    MUMBLE_CREDS_FILE="mumble-credentials.txt"
+fi
+
+if [ -n "$MUMBLE_CREDS_FILE" ]; then
+    # Append Mumble credentials to the same file
+    echo "" >> admin_credentials.txt
+    cat "$MUMBLE_CREDS_FILE" >> admin_credentials.txt
+    rm -f "$MUMBLE_CREDS_FILE"
 fi
 
 # Display all credentials if captured
@@ -324,6 +348,17 @@ if [ -f "admin_credentials.txt" ]; then
         fi
     else
         echo " Node-RED service is not running. Check the service status."
+    fi
+    
+    # Check Mumble server status
+    if systemctl is-active --quiet mumble-server; then
+        if [ -d "/etc/letsencrypt/live" ]; then
+            echo " Mumble server should be running at $DOMAIN:64738 (SSL enabled)"
+        else
+            echo " Mumble server should be running at $DOMAIN:64738 (SSL disabled)"
+        fi
+    else
+        echo " Mumble server is not running. Check the service status."
     fi
     
     # Delete the credentials file
