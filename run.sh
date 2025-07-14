@@ -284,12 +284,47 @@ echo "Running automated setup..."
 # Wait for any background processes to finish output
 sleep 0.5
 
-# Display admin credentials if captured
+# Install Node-RED
+echo
+echo "=== Installing Node-RED ==="
+echo "Installing Node-RED with HTTPS support..."
+./scripts/nodered-install.sh
+
+# Wait for Node-RED to start
+sleep 2
+
+# Append Node-RED credentials to admin_credentials.txt if Node-RED installed
+NODERED_CREDS_FILE=""
+if [ -f "tak-*/node-red-credentials.txt" ]; then
+    NODERED_CREDS_FILE=$(ls tak-*/node-red-credentials.txt | head -1)
+elif [ -f "node-red-credentials.txt" ]; then
+    NODERED_CREDS_FILE="node-red-credentials.txt"
+fi
+
+if [ -n "$NODERED_CREDS_FILE" ]; then
+    # Append Node-RED credentials to the same file
+    echo "" >> admin_credentials.txt
+    cat "$NODERED_CREDS_FILE" >> admin_credentials.txt
+    rm -f "$NODERED_CREDS_FILE"
+fi
+
+# Display all credentials if captured
 if [ -f "admin_credentials.txt" ]; then
     echo "=== TAKSERVER Credentials ==="
     cat admin_credentials.txt
     echo
     echo " TAKServer should be running and accessible at https://$DOMAIN:8446"
+    
+    # Check if HTTPS is enabled for Node-RED
+    if systemctl is-active --quiet nodered.service; then
+        if [ -d "/etc/letsencrypt/live" ]; then
+            echo " Node-RED should be running and accessible at https://$DOMAIN:1880"
+        else
+            echo " Node-RED should be running and accessible at http://$DOMAIN:1880"
+        fi
+    else
+        echo " Node-RED service is not running. Check the service status."
+    fi
     
     # Delete the credentials file
     rm -f admin_credentials.txt

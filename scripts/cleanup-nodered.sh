@@ -40,6 +40,12 @@ if [ -d /home/$(whoami)/.node-red ]; then
     sudo rm -rf /home/$(whoami)/.node-red
 fi
 
+# Remove Node-RED certificates directory
+if [ -d /home/$(whoami)/.node-red/certs ]; then
+    msg $info "Removing Node-RED certificates directory..."
+    sudo rm -rf /home/$(whoami)/.node-red/certs
+fi
+
 # Remove nodered system user
 if id "nodered" &>/dev/null; then
     msg $info "Removing nodered system user..."

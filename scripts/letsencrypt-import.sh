@@ -53,3 +53,17 @@ keytool -import \
     -storepass ${CA_PASS}
 
 chmod 644 files/letsencrypt.*
+
+# Restart Node-RED service if it's running to reload certificates
+if systemctl is-active --quiet nodered.service; then
+    msg $info "Restarting Node-RED service to reload certificates..."
+    sudo systemctl restart nodered.service
+    sleep 2
+    if systemctl is-active --quiet nodered.service; then
+        msg $success "Node-RED service restarted successfully"
+    else
+        msg $warn "Node-RED service failed to restart"
+    fi
+else
+    msg $info "Node-RED service is not running, skipping restart"
+fi
