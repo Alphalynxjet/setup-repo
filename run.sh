@@ -302,6 +302,15 @@ echo "Installing Mumble server with SSL support..."
 # Wait for Mumble to start
 sleep 2
 
+# Install MediaMTX Server
+echo
+echo "=== Installing MediaMTX Server ==="
+echo "Installing MediaMTX media server..."
+./scripts/mediamtx-setup.sh
+
+# Wait for MediaMTX to start
+sleep 2
+
 # Append Node-RED credentials to admin_credentials.txt if Node-RED installed
 NODERED_CREDS_FILE=""
 if [ -f "tak-*/node-red-credentials.txt" ]; then
@@ -330,6 +339,21 @@ if [ -n "$MUMBLE_CREDS_FILE" ]; then
     echo "" >> admin_credentials.txt
     cat "$MUMBLE_CREDS_FILE" >> admin_credentials.txt
     rm -f "$MUMBLE_CREDS_FILE"
+fi
+
+# Append MediaMTX credentials to admin_credentials.txt if MediaMTX installed
+MEDIAMTX_CREDS_FILE=""
+if [ -f "tak-*/mediamtx-credentials.txt" ]; then
+    MEDIAMTX_CREDS_FILE=$(ls tak-*/mediamtx-credentials.txt | head -1)
+elif [ -f "mediamtx-credentials.txt" ]; then
+    MEDIAMTX_CREDS_FILE="mediamtx-credentials.txt"
+fi
+
+if [ -n "$MEDIAMTX_CREDS_FILE" ]; then
+    # Append MediaMTX credentials to the same file
+    echo "" >> admin_credentials.txt
+    cat "$MEDIAMTX_CREDS_FILE" >> admin_credentials.txt
+    rm -f "$MEDIAMTX_CREDS_FILE"
 fi
 
 # Display all credentials if captured
@@ -361,6 +385,18 @@ if [ -f "admin_credentials.txt" ]; then
         echo " Mumble server is not running. Check the service status."
     fi
     
-    # Delete the credentials file
-    rm -f admin_credentials.txt
+    # Check MediaMTX server status
+    if systemctl is-active --quiet mediamtx; then
+        echo " MediaMTX server should be running at:"
+        echo "   RTSP: rtsp://$DOMAIN:8554"
+        echo "   RTMP: rtmp://$DOMAIN:1935"
+        echo "   HLS: http://$DOMAIN:8888"
+        echo "   WebRTC: http://$DOMAIN:8889"
+        echo "   SRT: srt://$DOMAIN:8890"
+    else
+        echo " MediaMTX server is not running. Check the service status."
+    fi
+    
+    # Keep the credentials file for future reference
+    echo " All credentials have been saved to admin_credentials.txt"
 fi
