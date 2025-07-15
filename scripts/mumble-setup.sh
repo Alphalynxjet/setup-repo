@@ -148,16 +148,12 @@ if sudo systemctl is-active --quiet mumble-server; then
         info ${RELEASE_PATH} "Server Name: TAK Mumble Server"
         
         # Also save to a separate file for run.sh to read
-        echo "Mumble Server: $IP_ADDRESS:64738" > "${RELEASE_PATH}/mumble-credentials.txt"
-        echo "Mumble Server Password: $MUMBLE_SERVER_PASS" >> "${RELEASE_PATH}/mumble-credentials.txt"
+        echo "Mumble Server Password: $MUMBLE_SERVER_PASS" > "${RELEASE_PATH}/mumble-credentials.txt"
         echo "Mumble SuperUser Password: $MUMBLE_ADMIN_PASS" >> "${RELEASE_PATH}/mumble-credentials.txt"
-        echo "Mumble Server Name: TAK Mumble Server" >> "${RELEASE_PATH}/mumble-credentials.txt"
     else
         # If no RELEASE_PATH, save to current directory for run.sh
-        echo "Mumble Server: $IP_ADDRESS:64738" > "mumble-credentials.txt"
-        echo "Mumble Server Password: $MUMBLE_SERVER_PASS" >> "mumble-credentials.txt"
+        echo "Mumble Server Password: $MUMBLE_SERVER_PASS" > "mumble-credentials.txt"
         echo "Mumble SuperUser Password: $MUMBLE_ADMIN_PASS" >> "mumble-credentials.txt"
-        echo "Mumble Server Name: TAK Mumble Server" >> "mumble-credentials.txt"
     fi
     
     # Restart Mumble to apply all settings
