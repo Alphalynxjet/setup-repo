@@ -356,45 +356,33 @@ if [ -n "$MEDIAMTX_CREDS_FILE" ]; then
     rm -f "$MEDIAMTX_CREDS_FILE"
 fi
 
-# Display all credentials if captured
+# Display credentials in clean format
 if [ -f "admin_credentials.txt" ]; then
-    echo "=== TAKSERVER Credentials ==="
-    cat admin_credentials.txt
+    echo "Connection credentials:"
+    
+    # Extract TAK Admin credentials
+    TAK_USERNAME=$(grep "TAK Admin Username:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    TAK_PASSWORD=$(grep "TAK Admin Password:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    
+    # Extract Node-RED credentials
+    NODERED_USERNAME=$(grep "Node-RED Admin Username:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    NODERED_PASSWORD=$(grep "Node-RED Admin Password:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    
+    # Extract Mumble credentials
+    MUMBLE_SUPERUSER_PASSWORD=$(grep "Mumble SuperUser Password:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    MUMBLE_SERVER_PASSWORD=$(grep "Mumble Server Password:" admin_credentials.txt | cut -d':' -f2 | sed 's/^[[:space:]]*//')
+    
+    # Display credentials
+    echo "TAK Admin Username: $TAK_USERNAME"
+    echo "TAK Admin Password: $TAK_PASSWORD"
+    echo "Node-RED Admin Username: $NODERED_USERNAME"
+    echo "Node-RED Admin Password: $NODERED_PASSWORD"
+    echo "Mumble SuperUser Password: $MUMBLE_SUPERUSER_PASSWORD"
+    echo "Mumble Server Password: $MUMBLE_SERVER_PASSWORD"
     echo
-    echo " Takserver WEB UI: https://$DOMAIN:8446"
-    
-    # Check if HTTPS is enabled for Node-RED
-    if systemctl is-active --quiet nodered.service; then
-        if [ -d "/etc/letsencrypt/live" ]; then
-            echo " Node-RED WEB UI: https://$DOMAIN:1880"
-        else
-            echo " Node-RED should be running and accessible at http://$DOMAIN:1880"
-        fi
-    else
-        echo " Node-RED service is not running. Check the service status."
-    fi
-    
-    # Check Mumble server status
-    if systemctl is-active --quiet mumble-server; then
-        if [ -d "/etc/letsencrypt/live" ]; then
-            echo " Mumble server: $DOMAIN:64738 (SSL enabled)"
-        else
-            echo " Mumble server should be running at $DOMAIN:64738 (SSL disabled)"
-        fi
-    else
-        echo " Mumble server is not running. Check the service status."
-    fi
-    
-    # Check MediaMTX server status
-    if systemctl is-active --quiet mediamtx; then
-        echo " MediaMTX server endpoints:"
-        echo "   RTSP: rtsp://$DOMAIN:8554"
-        echo "   RTMP: rtmp://$DOMAIN:1935"
-        echo "   HLS: http://$DOMAIN:8888"
-        echo "   WebRTC: http://$DOMAIN:8889"
-        echo "   SRT: srt://$DOMAIN:8890"
-    else
-        echo " MediaMTX server is not running. Check the service status."
-    fi
-    
+    echo "Connection Details:"
+    echo "Takserver webUI: https://$DOMAIN:8446"
+    echo "Nodered webUI: https://$DOMAIN:1880"
+    echo "Mumble Server: $DOMAIN:64738"
+    echo
 fi

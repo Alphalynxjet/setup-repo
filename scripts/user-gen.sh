@@ -38,19 +38,9 @@ zip -j "${ENROLL_BUNDLE}" \
     ${CLIENT_PATH}/server.pref
 echo; echo
 
-MSG="User Information:"
+MSG="TAK Admin Username: ${2}"
 detail "${MSG}"
-MSG="  Username: ${2}"
-detail "${MSG}"
-MSG="  Password: ${3}"
-detail "${MSG}"
-MSG="  Full Cert Bundle:"
-detail "${MSG}"
-MSG="    ${CERT_BUNDLE}"
-detail "${MSG}"
-MSG="  Soft Cert Bundle:"
-detail "${MSG}"
-MSG="     ${ENROLL_BUNDLE}"
+MSG="TAK Admin Password: ${3}"
 detail "${MSG}"
 echo 
 
