@@ -13,6 +13,21 @@ install_init
 
 msg $info "Starting Node-RED installation..."
 
+# Install Node.js if not already installed
+if ! command -v node &> /dev/null; then
+    msg $info "Installing Node.js..."
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+fi
+
+# Verify Node.js installation
+if command -v node &> /dev/null && command -v npm &> /dev/null; then
+    msg $success "Node.js and npm are available"
+else
+    msg $danger "Failed to install Node.js and npm"
+    exit 1
+fi
+
 # Install Node-RED using npm (official method)
 msg $info "Installing Node-RED using npm..."
 sudo npm install -g --unsafe-perm node-red
@@ -138,6 +153,13 @@ else
     PROTOCOL="http"
 fi
 
+# Get the correct path for node-red binary
+NODERED_PATH=$(which node-red)
+if [ -z "$NODERED_PATH" ]; then
+    msg $warn "node-red not found in PATH, using default npm global path"
+    NODERED_PATH="/usr/local/bin/node-red"
+fi
+
 # Create Node-RED service file
 msg $info "Creating Node-RED systemd service..."
 sudo tee /etc/systemd/system/nodered.service > /dev/null << EOF
@@ -146,7 +168,7 @@ Description=Node-RED
 After=syslog.target network.target
 
 [Service]
-ExecStart=/usr/bin/node-red --max-old-space-size=128 --userDir /home/$(whoami)/.node-red
+ExecStart=$NODERED_PATH --max-old-space-size=128 --userDir /home/$(whoami)/.node-red
 Restart=on-failure
 KillSignal=SIGINT
 User=$(whoami)
