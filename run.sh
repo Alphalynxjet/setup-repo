@@ -361,12 +361,12 @@ if [ -f "admin_credentials.txt" ]; then
     echo "=== TAKSERVER Credentials ==="
     cat admin_credentials.txt
     echo
-    echo " TAKServer should be running and accessible at https://$DOMAIN:8446"
+    echo " Takserver WEB UI: https://$DOMAIN:8446"
     
     # Check if HTTPS is enabled for Node-RED
     if systemctl is-active --quiet nodered.service; then
         if [ -d "/etc/letsencrypt/live" ]; then
-            echo " Node-RED should be running and accessible at https://$DOMAIN:1880"
+            echo " Node-RED WEB UI: https://$DOMAIN:1880"
         else
             echo " Node-RED should be running and accessible at http://$DOMAIN:1880"
         fi
@@ -377,7 +377,7 @@ if [ -f "admin_credentials.txt" ]; then
     # Check Mumble server status
     if systemctl is-active --quiet mumble-server; then
         if [ -d "/etc/letsencrypt/live" ]; then
-            echo " Mumble server should be running at $DOMAIN:64738 (SSL enabled)"
+            echo " Mumble server: $DOMAIN:64738 (SSL enabled)"
         else
             echo " Mumble server should be running at $DOMAIN:64738 (SSL disabled)"
         fi
@@ -387,7 +387,7 @@ if [ -f "admin_credentials.txt" ]; then
     
     # Check MediaMTX server status
     if systemctl is-active --quiet mediamtx; then
-        echo " MediaMTX server should be running at:"
+        echo " MediaMTX server endpoints:"
         echo "   RTSP: rtsp://$DOMAIN:8554"
         echo "   RTMP: rtmp://$DOMAIN:1935"
         echo "   HLS: http://$DOMAIN:8888"
