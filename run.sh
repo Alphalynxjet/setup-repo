@@ -397,6 +397,4 @@ if [ -f "admin_credentials.txt" ]; then
         echo " MediaMTX server is not running. Check the service status."
     fi
     
-    # Keep the credentials file for future reference
-    echo " All credentials have been saved to admin_credentials.txt"
 fi
